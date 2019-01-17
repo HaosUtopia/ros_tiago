@@ -30,13 +30,12 @@ public:
 		pub_CurrentGoalPose = nh_.advertise<trajectory_msgs::JointTrajectory>("/gripper_controller/command",10);
     service = nh_.advertiseService("gripper_control", &GripperStiffnessController::ControlGripper, this);
 
-		priv_nh_.getParam("M_admittance", M_admittance);
-    priv_nh_.getParam("K_admittance", K_admittance);
-		priv_nh_.getParam("B_admittance", B_admittance);
-		priv_nh_.getParam("K_impedance", K_impedance);
-		priv_nh_.getParam("B_impedance", B_impedance);
-		priv_nh_.getParam("K_admittance", K_admittance);
-		priv_nh_.getParam("K_admittance", K_admittance);
+    priv_nh_.getParam("/M_admittance", M_admittance);
+    priv_nh_.getParam("/K_admittance", K_admittance);
+    priv_nh_.getParam("/B_admittance", B_admittance);
+    priv_nh_.getParam("/K_impedance", K_impedance);
+    priv_nh_.getParam("/B_impedance", B_impedance);
+    //ROS_INFO_STREAM(M_admittance);
 
     goal.joint_names.push_back("gripper_left_finger_joint");
 		goal.joint_names.push_back("gripper_right_finger_joint");
@@ -63,6 +62,7 @@ void GripperStiffnessController::GetCurrentState(const sensor_msgs::JointState::
 	vel_gripper_right = (msg_curr_state->velocity)[8];
 	eff_gripper_left = (msg_curr_state->effort)[7];
 	eff_gripper_right = (msg_curr_state->effort)[8];
+  ROS_INFO_STREAM("Update!!!!!!!!!!!!!!!");
 }
 
 void GripperStiffnessController::SetGoal(float pos_left, float pos_right, float vel_left, float vel_right, float acc_left, float acc_right, float eff_left, float eff_right, ros::Duration dt)
@@ -86,15 +86,20 @@ bool GripperStiffnessController::ControlGripper(gripper_stiffness_controller::gr
 	if(req.command == "grip")
 	{
 		dt = ros::Duration(2.0);
-    //SetGoal(float(0), float(0), float(0), float(0), float(0), float(0), float(0), float(0), dt);
+    SetGoal(float(0.02), float(0.02), float(0), float(0), float(0), float(0), float(0), float(0), dt);
+    pub_CurrentGoalPose.publish(goal);
+    dt.sleep();
+    //SetGoal(float(0.02), float(0.04), float(0), float(0), float(0), float(0), float(-0), float(-0.2), dt);
     //pub_CurrentGoalPose.publish(goal);
-		SetGoal(float(0.02), float(0.02), float(0), float(0), float(0), float(0), float(0), float(0), dt);
-		pub_CurrentGoalPose.publish(goal);
-		res.reply = true;
+    //res.reply = true;
+
 ///////////////////////////////////////////////////////////////////////////////
-		/*float pos_left, pos_right, vel_left, vel_right, acc_left, acc_right, eff_left, eff_right;
+    float pos_left, pos_right, vel_left, vel_right, acc_left, acc_right, eff_left, eff_right;
 		float pre_pos_left = 0;
     float pre_pos_right = 0;
+    ros::Duration(2.0).sleep();
+    ROS_INFO("Start admittance control!!!!!!!!!!!!");
+
 
     while(ros::ok())
 		{
@@ -109,8 +114,10 @@ bool GripperStiffnessController::ControlGripper(gripper_stiffness_controller::gr
 			eff_right = 0;
       dt = ros::Duration(0.1);
       SetGoal(pos_left, pos_right, vel_left, vel_right, acc_left, acc_right, eff_left, eff_right, dt);
-////////////////////////////////////////////////////////////////////////////////
+      ROS_INFO_STREAM("pos="<<pos_left<<"\nvel="<<vel_left<<"\nacc="<<acc_left);
 
+////////////////////////////////////////////////////////////////////////////////
+/*
 ///////////////////////////////Impedance Control////////////////////////////////
 			pos_left = pos_gripper_left;//open 0.04; closed 0;
 			pos_right = pos_gripper_right;
@@ -133,12 +140,14 @@ bool GripperStiffnessController::ControlGripper(gripper_stiffness_controller::gr
 			{
 				pre_pos_left = pos_left;
         pre_pos_right = pos_right;
-			}
-    }*/
+      }*/
+      pub_CurrentGoalPose.publish(goal);
+      dt.sleep();
+    }
 	}
 	else if(req.command == "release")
 	{
-    dt = ros::Duration(1.0);
+		dt = ros::Duration(1.0);
 		SetGoal(0.04, 0.04, float(0), float(0), float(0), float(0), float(0), float(0), dt);
 		pub_CurrentGoalPose.publish(goal);
 		res.reply = true;
