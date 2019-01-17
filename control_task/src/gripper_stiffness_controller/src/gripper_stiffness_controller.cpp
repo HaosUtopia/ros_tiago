@@ -8,17 +8,17 @@ class GripperStiffnessController
 {
 private:
 	ros::NodeHandle nh_;
-  ros::NodeHandle priv_nh_;
+	ros::NodeHandle priv_nh_;
 
 	ros::Subscriber sub_CurrentState; //pos. vel. eff.
 	ros::Publisher pub_CurrentGoalPose;
-  ros::ServiceServer service;
+	ros::ServiceServer service;
 
 	float M_admittance, K_admittance, B_admittance, K_impedance, B_impedance;
 	trajectory_msgs::JointTrajectory goal;
 
 	void GetCurrentState(const sensor_msgs::JointState::ConstPtr& msg_curr_state);
-  bool ControlGripper(gripper_stiffness_controller::gripper_control::Request &req, gripper_stiffness_controller::gripper_control::Response &res);
+	bool ControlGripper(gripper_stiffness_controller::gripper_control::Request &req, gripper_stiffness_controller::gripper_control::Response &res);
 	void SetGoal(float pos_left, float pos_right, float vel_left, float vel_right, float acc_left, float acc_right, float eff_left, float eff_right, ros::Duration dt);
 
 public:
@@ -45,10 +45,6 @@ public:
 		goal.points[0].velocities.resize(2);
 		goal.points[0].accelerations.resize(2);
 		goal.points[0].effort.resize(2);
-		//goal.points[0].positions.resize(1);
-		//goal.points[0].velocities.resize(1);
-		//goal.points[0].accelerations.resize(1);
-		//goal.points[0].effort.resize(1);
 
 		ROS_INFO("Gripper Controller initialization done!");
 	}
@@ -89,10 +85,10 @@ bool GripperStiffnessController::ControlGripper(gripper_stiffness_controller::gr
 	ros::Duration dt;
 	if(req.command == "grip")
 	{
-    dt = ros::Duration(2.0);
+		dt = ros::Duration(2.0);
     //SetGoal(float(0), float(0), float(0), float(0), float(0), float(0), float(0), float(0), dt);
     //pub_CurrentGoalPose.publish(goal);
-    SetGoal(float(0.02), float(0.02), float(0), float(0), float(0), float(0), float(0), float(0), dt);
+		SetGoal(float(0.02), float(0.02), float(0), float(0), float(0), float(0), float(0), float(0), dt);
 		pub_CurrentGoalPose.publish(goal);
 		res.reply = true;
 ///////////////////////////////////////////////////////////////////////////////
@@ -156,9 +152,9 @@ bool GripperStiffnessController::ControlGripper(gripper_stiffness_controller::gr
 
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "gripper_controller");
-    ros::NodeHandle nh;
-    GripperStiffnessController node(nh);
-		ros::spin();
-    return 0;
+	ros::init(argc, argv, "gripper_controller");
+	ros::NodeHandle nh;
+	GripperStiffnessController node(nh);
+	ros::spin();
+	return 0;
 }
