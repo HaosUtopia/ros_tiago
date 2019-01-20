@@ -14,15 +14,20 @@ private:
 	ros::Publisher pub_CurrentGoalPose;
 	ros::ServiceServer service;
 
-	float M_admittance, K_admittance, B_admittance, K_impedance, B_impedance;
+	float M_admittance, K_admittance, B_admittance, M_impedance, K_impedance, B_impedance, M_current, K_current, B_current;
+	float pos_left, pos_right, vel_left, vel_right, acc_left, acc_right, eff_left, eff_right;
 	trajectory_msgs::JointTrajectory goal;
 
 	void GetCurrentState(const sensor_msgs::JointState::ConstPtr& msg_curr_state);
 	bool ControlGripper(gripper_stiffness_controller::gripper_control::Request &req, gripper_stiffness_controller::gripper_control::Response &res);
-	void SetGoal(float pos_left, float pos_right, float vel_left, float vel_right, float acc_left, float acc_right, float eff_left, float eff_right, ros::Duration dt);
+	void SetGoal(float pos_left, float pos_right, float vel_left, float vel_right, ros::Duration dt);
 
 public:
-	float pos_gripper_left,pos_gripper_right,eff_gripper_left,eff_gripper_right,vel_gripper_left,vel_gripper_right;
+	float t;
+	float pos_target_left, pos_target_right;
+	float pos_gripper_left, pos_gripper_right, eff_gripper_left, eff_gripper_right, vel_gripper_left, vel_gripper_right;
+
+	void ControlProcess();
 
 	GripperStiffnessController(ros::NodeHandle nh) : nh_(nh), priv_nh_("~")
 	{
@@ -33,17 +38,27 @@ public:
     priv_nh_.getParam("/gain/M_admittance", M_admittance);
     priv_nh_.getParam("/gain/K_admittance", K_admittance);
     priv_nh_.getParam("/gain/B_admittance", B_admittance);
+		priv_nh_.getParam("/gain/M_impedance", M_impedance);
     priv_nh_.getParam("/gain/K_impedance", K_impedance);
     priv_nh_.getParam("/gain/B_impedance", B_impedance);
-    //ROS_INFO_STREAM(M_admittance);
+
+		M_current = M_admittance;
+		K_current = K_admittance;
+		B_current = B_admittance;
+
+		vel_left = 0;
+		vel_right = 0;
 
     goal.joint_names.push_back("gripper_left_finger_joint");
 		goal.joint_names.push_back("gripper_right_finger_joint");
 		goal.points.resize(1);
 		goal.points[0].positions.resize(2);
 		goal.points[0].velocities.resize(2);
-		goal.points[0].accelerations.resize(2);
-		goal.points[0].effort.resize(2);
+
+		t = 0.02;
+
+		pos_target_left = 0.04;
+		pos_target_right = 0.04;
 
 		ROS_INFO("Gripper Controller initialization done!");
 	}
@@ -62,19 +77,21 @@ void GripperStiffnessController::GetCurrentState(const sensor_msgs::JointState::
 	vel_gripper_right = (msg_curr_state->velocity)[8];
 	eff_gripper_left = (msg_curr_state->effort)[7];
 	eff_gripper_right = (msg_curr_state->effort)[8];
-  ROS_INFO_STREAM("eff_gripper_left="<<eff_gripper_left);
+	if(eff_gripper_left < -0.3 || eff_gripper_right < -0.3)
+	{
+		ROS_INFO("Convert to Impedance Control");
+		M_current = M_impedance;
+		K_current = K_impedance;
+		B_current = B_impedance;
+	}
 }
 
-void GripperStiffnessController::SetGoal(float pos_left, float pos_right, float vel_left, float vel_right, float acc_left, float acc_right, float eff_left, float eff_right, ros::Duration dt)
+void GripperStiffnessController::SetGoal(float pos_left, float pos_right, float vel_left, float vel_right, ros::Duration dt)
 {
 	goal.points[0].positions[0] = pos_left;
 	goal.points[0].positions[1] = pos_right;
 	goal.points[0].velocities[0] = vel_left;
 	goal.points[0].velocities[1] = vel_right;
-	goal.points[0].accelerations[0] = acc_left;
-	goal.points[0].accelerations[1] = acc_right;
-	goal.points[0].effort[0] = eff_left;
-	goal.points[0].effort[1] = eff_right;
 	goal.points[0].time_from_start = dt;
 	goal.header.stamp = ros::Time::now();
 }
@@ -85,79 +102,20 @@ bool GripperStiffnessController::ControlGripper(gripper_stiffness_controller::gr
 	ros::Duration dt;
 	if(req.command == "grip")
 	{
-    dt = ros::Duration(0.02);
-    //SetGoal(float(0.02), float(0.02), float(0), float(0), float(0), float(0), float(0), float(0), dt);
-    //pub_CurrentGoalPose.publish(goal);
-    //dt.sleep();
-    SetGoal(float(0.04), float(0.04), float(0), float(0), float(0), float(0), float(-0.2), float(-0.2), dt);
-    pub_CurrentGoalPose.publish(goal);
-    dt.sleep();
-    res.reply = true;
-
-///////////////////////////////////////////////////////////////////////////////
-    float pos_left, pos_right, vel_left, vel_right, acc_left, acc_right, eff_left, eff_right;
-		float pre_pos_left = 0;
-    float pre_pos_right = 0;
-    ROS_INFO("Start admittance control!!!!!!!!!!!!");
-
-    vel_left = 0;
-    vel_right = 0;
-
-
-    while(ros::ok())
-		{/*
-///////////////////////////////Admittance Control///////////////////////////////
-      float t = 0.02;
-			pos_left = pos_gripper_left;//open 0.04; closed 0;
-			pos_right = pos_gripper_right;
-      //vel_left = vel_gripper_left;
-      //vel_right = vel_gripper_right;
-      acc_left = 1/M_admittance*(-eff_gripper_left-K_admittance*pos_gripper_left-B_admittance*vel_left);
-      acc_right = 1/M_admittance*(-eff_gripper_right-K_admittance*pos_gripper_right-B_admittance*vel_right);
-      vel_left = vel_left + acc_left * t;
-      vel_right = vel_right + acc_right * t;
-      pos_left = pos_left + vel_left * t;
-      pos_right = pos_right + vel_right * t;
-      eff_left = 0;
-			eff_right = 0;
-      dt = ros::Duration(t);
-      SetGoal(pos_left, pos_right, vel_left, vel_right, acc_left, acc_right, eff_left, eff_right, dt);
-      ROS_INFO_STREAM("pos="<<pos_left<<"\nvel="<<vel_left<<"\nacc="<<acc_left);
-
-////////////////////////////////////////////////////////////////////////////////
-*/
-///////////////////////////////Impedance Control////////////////////////////////
-			pos_left = pos_gripper_left;//open 0.04; closed 0;
-			pos_right = pos_gripper_right;
-			vel_left = vel_gripper_left;
-			vel_right = vel_gripper_right;
-			acc_left = 0;
-			acc_right = 0;
-			eff_left = B_impedance * vel_gripper_left + K_impedance * pos_gripper_left - eff_gripper_left;
-			eff_right = B_impedance * vel_gripper_right + K_impedance * pos_gripper_right - eff_gripper_right;
-      SetGoal(pos_left, pos_right, vel_left, vel_right, acc_left, acc_right, eff_left, eff_right, dt);
-////////////////////////////////////////////////////////////////////////////////
-/*
-			pub_CurrentGoalPose.publish(goal);
-      if((pos_left - pre_pos_left)^2 + (pos_right - pre_pos_right)^2 <= 0.00001)
-			{
-				res.reply = true;
-				break;
-			}
-			else
-			{
-				pre_pos_left = pos_left;
-        pre_pos_right = pos_right;
-      }*/
-      //pub_CurrentGoalPose.publish(goal);
-      dt.sleep();
-    }
+		pos_target_left = 0.0;
+		pos_target_right = 0.0;
+		M_current = M_admittance;
+		K_current = K_admittance;
+		B_current = B_admittance;
+		res.reply = true;
 	}
 	else if(req.command == "release")
 	{
-    dt = ros::Duration(1.0);
-		SetGoal(0.04, 0.04, float(0), float(0), float(0), float(0), float(0), float(0), dt);
-		pub_CurrentGoalPose.publish(goal);
+		pos_target_left = 0.04;
+		pos_target_right = 0.04;
+		M_current = M_admittance;
+		K_current = K_admittance;
+		B_current = B_admittance;
 		res.reply = true;
 	}
 	else
@@ -167,16 +125,38 @@ bool GripperStiffnessController::ControlGripper(gripper_stiffness_controller::gr
 	}
 }
 
+void GripperStiffnessController::ControlProcess()
+{
+	pos_left = pos_gripper_left;//open 0.04; closed 0;
+	pos_right = pos_gripper_right;
+	eff_left = -eff_gripper_left-K_current*(pos_gripper_left-pos_target_left)-B_current*vel_left;
+	eff_right = -eff_gripper_right-K_current*(pos_gripper_right-pos_target_right)-B_current*vel_right;
+	acc_left = 1/M_current*(eff_left);
+	acc_right = 1/M_current*(eff_right);
+	vel_left = vel_left + acc_left * t;
+	vel_right = vel_right + acc_right * t;
+	pos_left = pos_left + vel_left * t;
+	pos_right = pos_right + vel_right * t;
+	if((eff_left + eff_gripper_left) * (eff_left + eff_gripper_left) + (eff_right + eff_gripper_right)* (eff_right + eff_gripper_right) > 0.001)
+	{
+		SetGoal(pos_left, pos_right, vel_left, vel_right, ros::Duration(t));
+		pub_CurrentGoalPose.publish(goal);
+	}
+}
+
 int main(int argc, char** argv)
 {
 
 	ros::init(argc, argv, "gripper_controller");
 
 	ros::NodeHandle nh;
-  ros::AsyncSpinner spinner(2); // Use 2 threads
-  spinner.start();
+	ros::Rate r(50);
 	GripperStiffnessController node(nh);
-  //ros::spin();
-  ros::waitForShutdown();
+	while (ros::ok())
+	{
+		node.ControlProcess();
+		ros::spinOnce();
+		r.sleep();
+	}
 	return 0;
 }
