@@ -137,7 +137,7 @@ void GripperStiffnessController::ControlProcess()
 	vel_right = vel_right + acc_right * t;
 	pos_left = pos_left + vel_left * t;
 	pos_right = pos_right + vel_right * t;
-	if((eff_left + eff_gripper_left) * (eff_left + eff_gripper_left) + (eff_right + eff_gripper_right)* (eff_right + eff_gripper_right) > 0.001)
+	if((eff_left + eff_gripper_left) * (eff_left + eff_gripper_left) + (eff_right + eff_gripper_right)* (eff_right + eff_gripper_right) > 0.0002)
 	{
 		SetGoal(pos_left, pos_right, vel_left, vel_right, ros::Duration(t));
 		pub_CurrentGoalPose.publish(goal);
