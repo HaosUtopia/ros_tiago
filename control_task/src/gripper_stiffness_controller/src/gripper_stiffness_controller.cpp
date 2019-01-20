@@ -35,12 +35,12 @@ public:
 		pub_CurrentGoalPose = nh_.advertise<trajectory_msgs::JointTrajectory>("/gripper_controller/command",10);
     service = nh_.advertiseService("gripper_control", &GripperStiffnessController::ControlGripper, this);
 
-    priv_nh_.getParam("/gain/M_admittance", M_admittance);
-    priv_nh_.getParam("/gain/K_admittance", K_admittance);
-    priv_nh_.getParam("/gain/B_admittance", B_admittance);
+		priv_nh_.getParam("/gain/M_admittance", M_admittance);
+		priv_nh_.getParam("/gain/K_admittance", K_admittance);
+		priv_nh_.getParam("/gain/B_admittance", B_admittance);
 		priv_nh_.getParam("/gain/M_impedance", M_impedance);
-    priv_nh_.getParam("/gain/K_impedance", K_impedance);
-    priv_nh_.getParam("/gain/B_impedance", B_impedance);
+		priv_nh_.getParam("/gain/K_impedance", K_impedance);
+		priv_nh_.getParam("/gain/B_impedance", B_impedance);
 
 		M_current = M_admittance;
 		K_current = K_admittance;
@@ -49,7 +49,7 @@ public:
 		vel_left = 0;
 		vel_right = 0;
 
-    goal.joint_names.push_back("gripper_left_finger_joint");
+		goal.joint_names.push_back("gripper_left_finger_joint");
 		goal.joint_names.push_back("gripper_right_finger_joint");
 		goal.points.resize(1);
 		goal.points[0].positions.resize(2);
@@ -131,8 +131,8 @@ void GripperStiffnessController::ControlProcess()
 	pos_right = pos_gripper_right;
 	eff_left = -eff_gripper_left-K_current*(pos_gripper_left-pos_target_left)-B_current*vel_left;
 	eff_right = -eff_gripper_right-K_current*(pos_gripper_right-pos_target_right)-B_current*vel_right;
-	acc_left = 1/M_current*(eff_left);
-	acc_right = 1/M_current*(eff_right);
+	acc_left = 1/M_current * eff_left;
+	acc_right = 1/M_current * eff_right;
 	vel_left = vel_left + acc_left * t;
 	vel_right = vel_right + acc_right * t;
 	pos_left = pos_left + vel_left * t;
