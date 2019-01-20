@@ -79,10 +79,17 @@ void GripperStiffnessController::GetCurrentState(const sensor_msgs::JointState::
 	eff_gripper_right = (msg_curr_state->effort)[8];
 	if(eff_gripper_left < -0.3 || eff_gripper_right < -0.3)
 	{
-		ROS_INFO("Convert to Impedance Control");
+		ROS_INFO("Control Mode: Impedance Control");
 		M_current = M_impedance;
 		K_current = K_impedance;
 		B_current = B_impedance;
+	}
+	else
+	{
+		ROS_INFO("Control Mode: Admittance Control");
+		M_current = M_admittance;
+		K_current = K_admittance;
+		B_current = B_admittance;
 	}
 }
 
@@ -104,18 +111,12 @@ bool GripperStiffnessController::ControlGripper(gripper_stiffness_controller::gr
 	{
 		pos_target_left = 0.0;
 		pos_target_right = 0.0;
-		M_current = M_admittance;
-		K_current = K_admittance;
-		B_current = B_admittance;
 		res.reply = true;
 	}
 	else if(req.command == "release")
 	{
 		pos_target_left = 0.04;
 		pos_target_right = 0.04;
-		M_current = M_admittance;
-		K_current = K_admittance;
-		B_current = B_admittance;
 		res.reply = true;
 	}
 	else
