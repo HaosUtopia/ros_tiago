@@ -21,13 +21,22 @@ SkinProxCorrection::SkinProxCorrection(ros::NodeHandle nh) : nh_(nh)
     prox_patch[i] = 0;
   }
 
+  weight_x = 5;
+  weight_y = 5;
+  weight_z = 5;
+
+  threshold_1 = 0.1;
+  threshold_2 = 0.1;
+  delta_x = 0;
+  max_delta_x = 1;
+  direction = 1;
+
   current_position.x = 0;
   current_position.y = 0;
   current_position.z = 0;
   goal_position_from_perception.x = 0;
   goal_position_from_perception.y = 0;
   goal_position_from_perception.z = 0;
-  Position_correction();
 }
 
 /*void SkinProxCorrection::Get_position_from_percertion(const geometry_msgs::PoseStamped::ConstPtr &position_from_perception) //how to judge the postion which was changed ???
@@ -177,48 +186,52 @@ void SkinProxCorrection::Get_prox_pathch_10(const tum_ics_skin_msgs::SkinCellDat
 
 void SkinProxCorrection::Movement_correction()
 {
-  delta_ax = ;
-  delta_ay = ;
-  delta_az = ;
+  prox_xL = (prox_patch[2]>prox_patch[5])?prox_patch[2]:prox_patch[5];
+  prox_xL = (prox_patch[9]>prox_xL)?prox_patch[9]:prox_xL;
+  prox_xR = (prox_patch[3]>prox_patch[4])?prox_patch[3]:prox_patch[4];
+  prox_xR = (prox_patch[7]>prox_xR)?prox_patch[7]:prox_xR;
+  prox_yL = prox_patch[8];
+  prox_yR = prox_patch[6];
+  prox_zL = (prox_patch[0]>prox_patch[1])?prox_patch[0]:prox_patch[1];
+  prox_zR = 0;
+  delta_ax = weight_x * (prox_xL * prox_xL - prox_xR * prox_xR);
+  delta_ay = weight_y * (prox_yL * prox_yL - prox_yR * prox_yR);
+  delta_az = weight_z * (prox_zL * prox_zL - prox_zR * prox_zR);
 }
 
 void SkinProxCorrection::Position_correction()
 {
-  if( prox_patch[0] > threshold_1 && prox_patch[1] < threshold_2)
-  {
-    ros::Duration dt = ros::Duration(1.0);
-    goal_position_correction.pose.position.x = goal_position_correction.pose.position.x + 0.1;
-    /*goal_position_correction.pose.position.y =
-    goal_position_correction.pose.position.z = */
-    ROS_INFO_STREAM("Move left !!!!!!!!!!");
-    pub_goal_position_correction.publish(goal_position_correction);
-    dt.sleep();
-  }
-
-  if( prox_patch[0] < threshold_1 && prox_patch[1] > threshold_2)
-  {
-    ros::Duration dt = ros::Duration(1.0);
-    goal_position_correction.pose.position.x = goal_position_correction.pose.position.x - 0.1;
-    /*goal_position_correction.pose.position.y =
-    goal_position_correction.pose.position.z = */
-    ROS_INFO_STREAM("Move right !!!!!!!!!!");
-    //ROS_INFO_STREAM("goal_position_correction " << goal_position_correction.pose.position.x);
-    pub_goal_position_correction.publish(goal_position_correction);
-    dt.sleep();
-  }
-
-  if( prox_patch[0] > threshold_1 && prox_patch[1] > threshold_2) //can't grip the object, which position I should send ???
-  {
-    ros::Duration dt = ros::Duration(1.0);
-    ROS_INFO_STREAM("I can't grip !!!!!!!!!!");
-    dt.sleep();
-  }
-
   if( prox_patch[0] < threshold_1 && prox_patch[1] < threshold_2)
   {
-    ros::Duration dt = ros::Duration(1.0);
     ROS_INFO_STREAM("OK, I can grip !!!!!!!!!!");
+    //ros::service::call
+    return true;
+  }
+  else
+  {
+    if(prox_patch[0] > threshold_1 && prox_patch[1] < threshold_2)
+    {
+      direction = -1;
+      ROS_INFO_STREAM("Move left !!!!!!!!!!");
+    }
+    if(prox_patch[0] < threshold_1 && prox_patch[1] > threshold_2)
+    {
+      direction = 1;
+      ROS_INFO_STREAM("Move right !!!!!!!!!!");
+    }
+
+    delta_x = delta_x + 0.1;
+
+    goal_position_correction.pose.position.x = goal_position_from_perception.pose.position.x - delta_x * direction;
+    goal_position_correction.pose.position.y = goal_position_from_perception.pose.position.y;
+    goal_position_correction.pose.position.z = goal_position_from_perception.pose.position.z;
     pub_goal_position_correction.publish(goal_position_correction);
-    dt.sleep();
+
+    if(delta_x >= 1)
+    {
+      delta_x = 0;
+      direction = -direction;
+    }
+    return false;
   }
 }

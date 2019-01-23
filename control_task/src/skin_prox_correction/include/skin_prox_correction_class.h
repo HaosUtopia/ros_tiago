@@ -24,7 +24,11 @@ private:
 
   int cellId_patch[10];
   double prox_patch[10];
-  double threshold_1 = 0.2, threshold_2 = 0.2;  //set the threshold of prox
+  double weight_x, weight_y, weight_z;
+
+  double threshold_1, threshold_2;  //set the threshold of prox
+  double delta_x, max_delta_x;
+  int direction;
 
   geometry_msgs::Point current_position;
   geometry_msgs::Point goal_position_from_perception;
