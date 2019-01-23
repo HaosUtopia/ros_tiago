@@ -1,0 +1,74 @@
+#include <skin_prox_correction_class.h>
+
+SkinProxCorrection::SkinProxCorrection(ros::NodeHandle nh) : nh_(nh)
+{
+  //sub_goal_position_from_perception = nh_.subscribe<geometry_msgs::PoseStamped>("/*add_topic*/", 10, &SkinProxCorrection::Get_position_from_percertion, this);
+  pub_goal_position_correction = nh_.advertise<geometry_msgs::PoseStamped>("/control/goal_pose", 10);
+  patch_1 = nh_.subscribe<tum_ics_skin_msgs::SkinCellDataArray>("/tiago/patch1", 10, &SkinProxCorrection::Get_prox_pathch_1, this);
+  patch_2 = nh_.subscribe<tum_ics_skin_msgs::SkinCellDataArray>("/tiago/patch2", 10, &SkinProxCorrection::Get_prox_pathch_2, this);
+
+  goal_position_from_perception.x = 0;
+  goal_position_from_perception.y = 0;
+  goal_position_from_perception.z = 0;
+  Position_correction();
+}
+
+/*void SkinProxCorrection::Get_position_from_percertion(const geometry_msgs::PoseStamped::ConstPtr &position_from_perception) //how to judge the postion which was changed ???
+{
+  goal_position_from_perception.x = position_from_perception->pose.position.x;
+  goal_position_from_perception.y = position_from_perception->pose.position.y;
+  goal_position_from_perception.z = position_from_perception->pose.position.z;
+}*/
+
+void SkinProxCorrection::Get_prox_pathch_1(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch_1) //Get the prox of left finger
+{
+  prox_patch_1 = data_patch_1->data.data()->prox[0];
+  ROS_INFO_STREAM("prox_patch_1 " << prox_patch_1);
+}
+
+void SkinProxCorrection::Get_prox_pathch_2(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch_2) //Get the prox of right finger
+{
+  prox_patch_2 = data_patch_2->data.data()->prox[0];
+  ROS_INFO_STREAM("prox_patch_2 " << prox_patch_2);
+}
+
+void SkinProxCorrection::Position_correction()
+{
+  if( prox_patch_1 > threshold_1 && prox_patch_2 < threshold_2)
+  {
+    ros::Duration dt = ros::Duration(1.0);
+    goal_position_correction.pose.position.x = goal_position_correction.pose.position.x + 0.1;
+    /*goal_position_correction.pose.position.y =
+    goal_position_correction.pose.position.z = */
+    ROS_INFO_STREAM("Move left !!!!!!!!!!");
+    pub_goal_position_correction.publish(goal_position_correction);
+    dt.sleep();
+  }
+
+  if( prox_patch_1 < threshold_1 && prox_patch_2 > threshold_2)
+  {
+    ros::Duration dt = ros::Duration(1.0);
+    goal_position_correction.pose.position.x = goal_position_correction.pose.position.x - 0.1;
+    /*goal_position_correction.pose.position.y =
+    goal_position_correction.pose.position.z = */
+    ROS_INFO_STREAM("Move right !!!!!!!!!!");
+    //ROS_INFO_STREAM("goal_position_correction " << goal_position_correction.pose.position.x);
+    pub_goal_position_correction.publish(goal_position_correction);
+    dt.sleep();
+  }
+
+  if( prox_patch_1 > threshold_1 && prox_patch_2 > threshold_2) //can't grip the object, which position I should send ???
+  {
+    ros::Duration dt = ros::Duration(1.0);
+    ROS_INFO_STREAM("I can't grip !!!!!!!!!!");
+    dt.sleep();
+  }
+
+  if( prox_patch_1 < threshold_1 && prox_patch_2 < threshold_2)
+  {
+    ros::Duration dt = ros::Duration(1.0);
+    ROS_INFO_STREAM("OK, I can grip !!!!!!!!!!");
+    pub_goal_position_correction.publish(goal_position_correction);
+    dt.sleep();
+  }
+}
