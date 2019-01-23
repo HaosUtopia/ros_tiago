@@ -7,8 +7,8 @@
 
   <author email="allenwch@hotmail.com">ChenghaoWang</author>
   <maintainer email="allenwch@hotmail.com">ChenghaoWang</maintainer>
-  <author email="chensheng.chen@tum.de">ChenshengChen</author>
-  <maintainer email="chensheng.chen@tum.de">ChenshengChen</maintainer>
+  <author email="chensheng.chen@outlook.com">chenshengchen</author>
+  <maintainer email="chensheng.chen@outlook.com">chenshengchen</maintainer>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
