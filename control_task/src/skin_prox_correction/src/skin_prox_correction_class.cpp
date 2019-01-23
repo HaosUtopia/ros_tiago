@@ -245,11 +245,7 @@ void SkinProxCorrection::Position_correction()
     goal_position_correction.pose.position.z = goal_position_from_perception.pose.position.z;
     pub_goal_position_correction.publish(goal_position_correction);
 
-<<<<<<< HEAD
     if(delta_x >= max_delta_x)
-=======
-    if(delta_x >= 1)
->>>>>>> ad57852a2001d31d131d7a143b820198a1e75439
     {
       delta_x = 0;
       direction = -direction;
