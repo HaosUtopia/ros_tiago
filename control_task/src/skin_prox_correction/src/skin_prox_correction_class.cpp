@@ -14,6 +14,7 @@ SkinProxCorrection::SkinProxCorrection(ros::NodeHandle nh) : nh_(nh)
   patch_8 = nh_.subscribe<tum_ics_skin_msgs::SkinCellDataArray>("/tiago/patch8", 10, &SkinProxCorrection::Get_prox_pathch_8, this);
   patch_9 = nh_.subscribe<tum_ics_skin_msgs::SkinCellDataArray>("/tiago/patch9", 10, &SkinProxCorrection::Get_prox_pathch_9, this);
   patch_10 = nh_.subscribe<tum_ics_skin_msgs::SkinCellDataArray>("/tiago/patch10", 10, &SkinProxCorrection::Get_prox_pathch_10, this);
+  pos_correction = nh_.advertiseService("position_correction", &SkinProxCorrection::Begin_correction, this);
 
   for(int i=0;i<10;i++)
   {
@@ -27,9 +28,11 @@ SkinProxCorrection::SkinProxCorrection(ros::NodeHandle nh) : nh_(nh)
 
   threshold_1 = 0.1;
   threshold_2 = 0.1;
-  delta_x = 0;
-  max_delta_x = 1;
+  max_delta_x = 1.0;
+  delta_x = 0.0;
+
   direction = 1;
+  flag = true;
 
   current_position.x = 0;
   current_position.y = 0;
@@ -60,150 +63,133 @@ void SkinProxCorrection::Get_prox_pathch_2(const tum_ics_skin_msgs::SkinCellData
 
 void SkinProxCorrection::Get_prox_pathch_3(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch) //Get the prox of right finger
 {
-  for(int i=0,i<data_patch->data.size(),i++)
+  if(data_patch->data.data()->prox[0] > prox_patch[2])
   {
-    if(data_patch->data[i].data()->prox[0] > prox_patch[2])
-    {
-      prox_patch[2] = data_patch->data[i].data()->prox[0];
-      cellId_patch[2] = data_patch->data[i].data()->cellId;
-      Movement_correction();
-    }
-    else if(cellId_patch[2] == data_patch->data[i].data()->cellId)
-    {
-      prox_patch[2] = data_patch->data[i].data()->prox[0];
-      Movement_correction();
-    }
+    prox_patch[2] = data_patch->data.data()->prox[0];
+    cellId_patch[2] = data_patch->data.data()->cellId;
+    Movement_correction();
+  }
+  else if(cellId_patch[2] == data_patch->data.data()->cellId)
+  {
+    prox_patch[2] = data_patch->data.data()->prox[0];
+    Movement_correction();
   }
 }
 
 void SkinProxCorrection::Get_prox_pathch_4(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch) //Get the prox of right finger
 {
-  for(int i=0,i<data_patch->data.size(),i++)
+  if(data_patch->data.data()->prox[0] > prox_patch[3])
   {
-    if(data_patch->data[i].data()->prox[0] > prox_patch[3])
-    {
-      prox_patch[3] = data_patch->data[i].data()->prox[0];
-      cellId_patch[3] = data_patch->data[i].data()->cellId;
-      Movement_correction();
-    }
-    else if(cellId_patch[3] == data_patch->data[i].data()->cellId)
-    {
-      prox_patch[3] = data_patch->data[i].data()->prox[0];
-      Movement_correction();
-    }
+    prox_patch[3] = data_patch->data.data()->prox[0];
+    cellId_patch[3] = data_patch->data.data()->cellId;
+    Movement_correction();
+  }
+  else if(cellId_patch[3] == data_patch->data.data()->cellId)
+  {
+    prox_patch[3] = data_patch->data.data()->prox[0];
+    Movement_correction();
   }
 }
 
 void SkinProxCorrection::Get_prox_pathch_5(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch) //Get the prox of right finger
 {
-  for(int i=0,i<data_patch->data.size(),i++)
+  if(data_patch->data.data()->prox[0] > prox_patch[4])
   {
-    if(data_patch->data[i].data()->prox[0] > prox_patch[4])
-    {
-      prox_patch[4] = data_patch->data[i].data()->prox[0];
-      cellId_patch[4] = data_patch->data[i].data()->cellId;
-      Movement_correction();
-    }
-    else if(cellId_patch[4] == data_patch->data[i].data()->cellId)
-    {
-      prox_patch[4] = data_patch->data[i].data()->prox[0];
-      Movement_correction();
-    }
+    prox_patch[4] = data_patch->data.data()->prox[0];
+    cellId_patch[4] = data_patch->data.data()->cellId;
+    Movement_correction();
+  }
+  else if(cellId_patch[4] == data_patch->data.data()->cellId)
+  {
+    prox_patch[4] = data_patch->data.data()->prox[0];
+    Movement_correction();
   }
 }
 
 void SkinProxCorrection::Get_prox_pathch_6(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch) //Get the prox of right finger
 {
-  for(int i=0,i<data_patch->data.size(),i++)
+  if(data_patch->data.data()->prox[0] > prox_patch[5])
   {
-    if(data_patch->data[i].data()->prox[0] > prox_patch[5])
-    {
-      prox_patch[5] = data_patch->data[i].data()->prox[0];
-      cellId_patch[5] = data_patch->data[i].data()->cellId;
-      Movement_correction();
-    }
-    else if(cellId_patch[5] == data_patch->data[i].data()->cellId)
-    {
-      prox_patch[5] = data_patch->data[i].data()->prox[0];
-      Movement_correction();
-    }
+    prox_patch[5] = data_patch->data.data()->prox[0];
+    cellId_patch[5] = data_patch->data.data()->cellId;
+    Movement_correction();
+  }
+  else if(cellId_patch[5] == data_patch->data.data()->cellId)
+  {
+    prox_patch[5] = data_patch->data.data()->prox[0];
+    Movement_correction();
   }
 }
 
 void SkinProxCorrection::Get_prox_pathch_7(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch) //Get the prox of right finger
 {
-  for(int i=0,i<data_patch->data.size(),i++)
+  if(data_patch->data.data()->prox[0] > prox_patch[6])
   {
-    if(data_patch->data[i].data()->prox[0] > prox_patch[6])
-    {
-      prox_patch[6] = data_patch->data[i].data()->prox[0];
-      cellId_patch[6] = data_patch->data[i].data()->cellId;
-      Movement_correction();
-    }
-    else if(cellId_patch[6] == data_patch->data[i].data()->cellId)
-    {
-      prox_patch[6] = data_patch->data[i].data()->prox[0];
-      Movement_correction();
-    }
+    prox_patch[6] = data_patch->data.data()->prox[0];
+    cellId_patch[6] = data_patch->data.data()->cellId;
+    Movement_correction();
+  }
+  else if(cellId_patch[6] == data_patch->data.data()->cellId)
+  {
+    prox_patch[6] = data_patch->data.data()->prox[0];
+    Movement_correction();
   }
 }
 
 void SkinProxCorrection::Get_prox_pathch_8(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch) //Get the prox of right finger
 {
-  for(int i=0,i<data_patch->data.size(),i++)
+  if(data_patch->data.data()->prox[0] > prox_patch[7])
   {
-    if(data_patch->data[i].data()->prox[0] > prox_patch[7])
-    {
-      prox_patch[7] = data_patch->data[i].data()->prox[0];
-      cellId_patch[7] = data_patch->data[i].data()->cellId;
-      Movement_correction();
-    }
-    else if(cellId_patch[7] == data_patch->data[i].data()->cellId)
-    {
-      prox_patch[7] = data_patch->data[i].data()->prox[0];
-      Movement_correction();
-    }
+    prox_patch[7] = data_patch->data.data()->prox[0];
+    cellId_patch[7] = data_patch->data.data()->cellId;
+    Movement_correction();
+  }
+  else if(cellId_patch[7] == data_patch->data.data()->cellId)
+  {
+    prox_patch[7] = data_patch->data.data()->prox[0];
+    Movement_correction();
   }
 }
 
 void SkinProxCorrection::Get_prox_pathch_9(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch) //Get the prox of right finger
 {
-  for(int i=0,i<data_patch->data.size(),i++)
+  if(data_patch->data.data()->prox[0] > prox_patch[8])
   {
-    if(data_patch->data[i].data()->prox[0] > prox_patch[8])
-    {
-      prox_patch[8] = data_patch->data[i].data()->prox[0];
-      cellId_patch[8] = data_patch->data[i].data()->cellId;
-      Movement_correction();
-    }
-    else if(cellId_patch[8] == data_patch->data[i].data()->cellId)
-    {
-      prox_patch[8] = data_patch->data[i].data()->prox[0];
-      Movement_correction();
-    }
+    prox_patch[8] = data_patch->data.data()->prox[0];
+    cellId_patch[8] = data_patch->data.data()->cellId;
+    Movement_correction();
+  }
+  else if(cellId_patch[8] == data_patch->data.data()->cellId)
+  {
+    prox_patch[8] = data_patch->data.data()->prox[0];
+    Movement_correction();
   }
 }
 
 void SkinProxCorrection::Get_prox_pathch_10(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch) //Get the prox of right finger
 {
-  for(int i=0,i<data_patch->data.size(),i++)
+  if(data_patch->data.data()->prox[0] > prox_patch[9])
   {
-    if(data_patch->data[i].data()->prox[0] > prox_patch[9])
-    {
-      prox_patch[9] = data_patch->data[i].data()->prox[0];
-      cellId_patch[9] = data_patch->data[i].data()->cellId;
-      Movement_correction();
-    }
-    else if(cellId_patch[9] == data_patch->data[i].data()->cellId)
-    {
-      prox_patch[9] = data_patch->data[i].data()->prox[0];
-      Movement_correction();
-    }
+    prox_patch[9] = data_patch->data.data()->prox[0];
+    cellId_patch[9] = data_patch->data.data()->cellId;
+    Movement_correction();
   }
+  else if(cellId_patch[9] == data_patch->data.data()->cellId)
+  {
+    prox_patch[9] = data_patch->data.data()->prox[0];
+    Movement_correction();
+  }
+}
+
+bool SkinProxCorrection::Begin_correction(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response)
+{
+  flag = false;
+  return true;
 }
 
 void SkinProxCorrection::Movement_correction()
 {
+  double prox_xL, prox_xR, prox_yL, prox_yR, prox_zL, prox_zR, delta_ax, delta_ay, delta_az;
   prox_xL = (prox_patch[2]>prox_patch[5])?prox_patch[2]:prox_patch[5];
   prox_xL = (prox_patch[9]>prox_xL)?prox_patch[9]:prox_xL;
   prox_xR = (prox_patch[3]>prox_patch[4])?prox_patch[3]:prox_patch[4];
@@ -215,9 +201,10 @@ void SkinProxCorrection::Movement_correction()
   delta_ax = weight_x * (prox_xL * prox_xL - prox_xR * prox_xR);
   delta_ay = weight_y * (prox_yL * prox_yL - prox_yR * prox_yR);
   delta_az = weight_z * (prox_zL * prox_zL - prox_zR * prox_zR);
+  //ROS_INFO_STREAM("dax="<<delta_ax<<"\nday="<<delta_ay<<"\ndaz"<<delta_az<<"\n");
 }
 
-void SkinProxCorrection::Position_correction()
+bool SkinProxCorrection::Position_correction()
 {
   if( prox_patch[0] < threshold_1 && prox_patch[1] < threshold_2)
   {
@@ -238,14 +225,16 @@ void SkinProxCorrection::Position_correction()
       ROS_INFO_STREAM("Move right !!!!!!!!!!");
     }
 
+    ROS_INFO_STREAM("X= "<<delta_x);
+
     delta_x = delta_x + 0.1;
 
-    goal_position_correction.pose.position.x = goal_position_from_perception.pose.position.x - delta_x * direction;
-    goal_position_correction.pose.position.y = goal_position_from_perception.pose.position.y;
-    goal_position_correction.pose.position.z = goal_position_from_perception.pose.position.z;
+    goal_position_correction.pose.position.x = goal_position_from_perception.x - delta_x * direction;
+    goal_position_correction.pose.position.y = goal_position_from_perception.y;
+    goal_position_correction.pose.position.z = goal_position_from_perception.z;
     pub_goal_position_correction.publish(goal_position_correction);
 
-    if(delta_x >= max_delta_x)
+    if(delta_x > max_delta_x - 0.001)
     {
       delta_x = 0;
       direction = -direction;

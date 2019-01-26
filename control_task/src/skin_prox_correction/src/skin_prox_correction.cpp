@@ -11,9 +11,14 @@ int main(int argc, char** argv)
 
    SkinProxCorrection ProxCorrection(node);
 
-   while(ros::ok() && ~ProxCorrection.Position_correction())
+   while(ros::ok())
    {
-     ros::Duration(0.5).sleep();
+     if(ProxCorrection.flag == false)
+     {
+       ProxCorrection.flag = ProxCorrection.Position_correction();
+       ros::Duration(0.5).sleep();
+       ROS_INFO("!!!");
+     }
    }
 
    ros::waitForShutdown();

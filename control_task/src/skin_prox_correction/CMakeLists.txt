@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   geometry_msgs
   tum_ics_skin_msgs
+  std_srvs
 )
 
 ## System dependencies are found with CMake's conventions

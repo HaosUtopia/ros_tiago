@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <std_srvs/Empty.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <tum_ics_skin_msgs/SkinCellDataArray.h>
 
@@ -9,7 +10,6 @@ private:
 
   ros::NodeHandle nh_;
 
-  ros::Subscriber sub_goal_position_from_perception;
   ros::Publisher  pub_goal_position_correction;
   ros::Subscriber patch_1;
   ros::Subscriber patch_2;
@@ -21,13 +21,14 @@ private:
   ros::Subscriber patch_8;
   ros::Subscriber patch_9;
   ros::Subscriber patch_10;
+  ros::ServiceServer pos_correction;
 
   int cellId_patch[10];
   double prox_patch[10];
   double weight_x, weight_y, weight_z;
 
   double threshold_1, threshold_2;  //set the threshold of prox
-  double delta_x, max_delta_x;
+  double max_delta_x, delta_x;
   int direction;
 
   geometry_msgs::Point current_position;
@@ -45,12 +46,14 @@ private:
   void Get_prox_pathch_8(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch);
   void Get_prox_pathch_9(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch);
   void Get_prox_pathch_10(const tum_ics_skin_msgs::SkinCellDataArray::ConstPtr &data_patch);
+  bool Begin_correction(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response);
   void Movement_correction();
 
 
 public:
 
   SkinProxCorrection(ros::NodeHandle nh);
-  void Position_correction();
+  bool Position_correction();
+  bool flag; //flag == True: stop position correction;flag == False: start position correction;
 
 };
